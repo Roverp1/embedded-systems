@@ -1,4 +1,4 @@
-; PROJEKT 10.2 - PARZYSTOSC I KONWERSJA
+; PROJEKT 10.2 - PARZYSTOSC I KONWERSJA (POPRAWIONY)
 ; Autor: Gemini
 
 NUM     EQU 30h     ; Number storage
@@ -92,22 +92,19 @@ SHOW_RESULTS:
     
     ; Convert Hex to BCD (Decimal)
     MOV A, NUM
-    MOV ROB, A          ; Put number in buffer for BIOS routine
+    MOV ROB, A          ; Put number in buffer (Low byte)
+    MOV ROB+1, #0       ; CLEAR High byte (Critical for correct conversion)
     MOV R0, #ROB        ; R0 points to buffer
     LCALL HEX_BCD       ; Converts hex at @R0 to BCD at @R0 (3 bytes)
     
     ; Print BCD (Decimal)
-    ; HEX_BCD result is 3 bytes, usually hundreds at ROB+1? 
-    ; Let's check lab usage: usually ROB+1 is hundreds, ROB is tens/ones?
-    ; Actually standard usage: ROB+1 (High), ROB (Low) if 16 bit. 
-    ; For 8 bit HEX_BCD outputs to ROB (LSB), ROB+1...
-    ; Safer to print all non-zero or just last 3 digits.
-    ; Simplified print:
-    MOV A, ROB+1        ; Hundreds
-    JZ SKIP_100
-    LCALL WRITE_HEX     ; Print hundreds
+    ; Print Hundreds (ROB+1)
+    MOV A, ROB+1        
+    JZ SKIP_100         ; If zero, don't print
+    LCALL WRITE_HEX
 SKIP_100:
-    MOV A, ROB          ; Tens and Ones (packed BCD)
+    ; Print Tens/Ones (ROB)
+    MOV A, ROB          
     LCALL WRITE_HEX
     
     MOV A, #'d'
@@ -120,10 +117,13 @@ SKIP_100:
 
 SHOW_DIGIT:
     ; Prints the hex digit in A (0-15)
-    CMP A, #10
-    JC DIGIT_09
+    ; 8051 Logic: Compare A with 10. 
+    ; If A < 10, Carry Flag is SET.
+    CJNE A, #10, CHECK_DIGIT
+CHECK_DIGIT:
+    JC IS_NUM           ; If Carry=1, it is 0-9
     ADD A, #7           ; Adjust for A-F (ASCII offset)
-DIGIT_09:
+IS_NUM:
     ADD A, #'0'         ; Convert to ASCII
     LCALL WRITE_DATA
     RET
