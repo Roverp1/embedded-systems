@@ -1,3 +1,6 @@
+
+
+
 VAL     EQU 30h     
 BCD_BUF EQU 32h     
 
@@ -12,13 +15,17 @@ START:
     
     
     LCALL WAIT_KEY
-    ACALL SHOW_DIGIT
+    MOV R1, A           
+    ACALL SHOW_DIGIT    
+    MOV A, R1           
     SWAP A
     MOV VAL, A
     
     
     LCALL WAIT_KEY
-    ACALL SHOW_DIGIT
+    MOV R1, A           
+    ACALL SHOW_DIGIT    
+    MOV A, R1           
     ORL A, VAL
     MOV VAL, A
     
@@ -75,18 +82,11 @@ HEX_SKIP_ZERO:
     MOV DPTR, #TXT_DEC_L1
     LCALL WRITE_TEXT
     
-    
-    
-    
-    
-    
     MOV A, #'0'         
     LCALL WRITE_DATA
     
     MOV A, BCD_BUF+1    
     LCALL WRITE_HEX     
-                        
-                        
     
     MOV A, BCD_BUF      
     LCALL WRITE_HEX     
