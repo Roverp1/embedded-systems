@@ -1,7 +1,7 @@
-; Zadanie 4.1 - Dodawanie 16-bit
+; Zadanie 4.1 - Dodawanie 16-bit (Fixed)
 ; Indeks: 121546 (X=4, Y=6)
-; Test 1: 2086h + 1204h = 328Ah
-; Test 2: 2536h + 29D3h = 4F09h
+; Test 1: 2086h + 1204h = 00328Ah
+; Test 2: 2536h + 29D3h = 004F09h
 
 ARG1_LO EQU 20H
 ARG1_HI EQU 21H
@@ -30,8 +30,6 @@ START:
     LCALL WRITE_DATA
     
     
-    MOV A, #0C0H
-    LCALL WRITE_INSTR
     
     
     MOV A, ARG1_LO
@@ -48,6 +46,9 @@ START:
     ADDC A, #0
     MOV RES_HI, A
     
+    
+    MOV A, #0C0H
+    LCALL WRITE_INSTR
     
     MOV A, RES_HI
     LCALL WRITE_HEX
@@ -66,37 +67,34 @@ START:
     AJMP START
 
 
+
 GET_WORD:
     
-    ; Uzywa standardowych procedur, ale skleja je recznie
     
-    ; High Byte
-    LCALL GET_NUM ; Czyta decimal, ale my chcemy hex cyfry...
-    ; STOP. PDF mowi: "procedura umożliwia wczytanie dokładnie 4 znaków"
-    ; Standardowe GET_NUM/BCD_HEX dziala na decimal.
-    ; Musimy napisac wlasne wczytywanie znak po znaku.
     
-    ; Znak 1 (Hi Nibble of Hi Byte)
-    LCALL GET_HEX_DIGIT
+    
+    
+    ACALL GET_HEX_DIGIT
     SWAP A
     MOV R1, A
     
-    ; Znak 2 (Lo Nibble of Hi Byte)
-    LCALL GET_HEX_DIGIT
-    ORL A, R1
-    MOV @R0, A ; Zapisz Hi Byte
     
-    ; Znak 3 (Hi Nibble of Lo Byte)
-    LCALL GET_HEX_DIGIT
+    ACALL GET_HEX_DIGIT
+    ORL A, R1
+    MOV @R0, A      
+    
+    
+    DEC R0          
+    
+    
+    ACALL GET_HEX_DIGIT
     SWAP A
     MOV R1, A
     
-    ; Znak 4 (Lo Nibble of Lo Byte)
-    LCALL GET_HEX_DIGIT
-    ORL A, R1
-    DEC R0
-    MOV @R0, A 
     
+    ACALL GET_HEX_DIGIT
+    ORL A, R1
+    MOV @R0, A      
     
     MOV A, #'h'
     LCALL WRITE_DATA
@@ -104,16 +102,18 @@ GET_WORD:
 
 GET_HEX_DIGIT:
     LCALL WAIT_KEY
-    MOV R2, A   
-    ; Konwersja na ASCII do wyswietlenia
-    CJNE A, #10, CHK_DIG
-CHK_DIG:
-    JC IS_NUM
-    ADD A, #7
-IS_NUM:
+    MOV R2, A       
+    
+    
+    CJNE A, #10, CHECK_NUM
+CHECK_NUM:
+    JC IS_DIGIT     
+    ADD A, #7       
+IS_DIGIT:
     ADD A, #'0'
     LCALL WRITE_DATA
-    MOV A, R2   ; Restore val
+    
+    MOV A, R2       ; Przywroc wartosc surowa do obliczen
     RET
 
 TXT_CLICK: DB ' klik', 0
