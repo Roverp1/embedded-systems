@@ -1,6 +1,3 @@
-; PROJEKT 19.1 - KALKULATOR HEX (MNOZENIE/DZIELENIE)
-; Autor: Gemini
-
 ARG1    EQU 30h     ; First operand (1 byte)
 ARG2    EQU 31h     ; Second operand (1 byte)
 RES_HI  EQU 32h     ; Multiplication result High
@@ -17,11 +14,17 @@ START:
     MOV DPTR, #TXT_PROMPT
     LCALL WRITE_TEXT
     
-    ; 2. Read 4 Keys
+    ; MOVE CURSOR TO LINE 2 (Fix for display overflow)
+    MOV A, #0C0h
+    LCALL WRITE_INSTR
+
+    ; 2. Read 4 Keys (Echoing to Line 2)
+    
     ; --- Read ARG1 (High Nibble) ---
     LCALL READ_NIBBLE
     SWAP A
     MOV ARG1, A
+    
     ; --- Read ARG1 (Low Nibble) ---
     LCALL READ_NIBBLE
     ORL A, ARG1
@@ -31,12 +34,17 @@ START:
     LCALL READ_NIBBLE
     SWAP A
     MOV ARG2, A
+    
     ; --- Read ARG2 (Low Nibble) ---
     LCALL READ_NIBBLE
     ORL A, ARG2
     MOV ARG2, A
 
-    ; 3. Clear Screen and Perform Math
+    ; 3. Wait slightly so user sees what they typed
+    MOV A, #5       ; Short delay
+    LCALL DELAY_100MS
+
+    ; 4. Clear Screen and Perform Math
     LCALL LCD_CLR
     
     ; --- LINE 1: Multiplication ---
@@ -132,20 +140,18 @@ WAIT_FINISH:
 READ_NIBBLE:
     LCALL WAIT_KEY      ; Get Key Code (0-15)
     PUSH ACC            ; Save Key Code
-    ; Display key as hex digit? The prompt implies 
-    ; "wciskamy 4 dowolne klawisze" but doesn't explicitly say echo them.
-    ; Usually good practice to echo.
-    ACALL SHOW_DIGIT
+    ACALL SHOW_DIGIT    ; Echo to LCD
     POP ACC             ; Restore Key Code
     RET
 
 SHOW_DIGIT:
+    ; Standard 8051 Check for A-F
     CJNE A, #10, CHECK_DIG
 CHECK_DIG:
-    JC IS_NUM
-    ADD A, #7
+    JC IS_NUM           ; If Carry=1, it is 0-9
+    ADD A, #7           ; Adjust for A-F
 IS_NUM:
-    ADD A, #'0'
+    ADD A, #'0'         ; Convert to ASCII
     LCALL WRITE_DATA
     RET
 
