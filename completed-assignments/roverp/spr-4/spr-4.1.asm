@@ -1,4 +1,4 @@
-; Zadanie 4.1 - Dodawanie 16-bit (Fixed)
+; Zadanie 4.1 - Dodawanie 16-bit
 ; Indeks: 121546 (X=4, Y=6)
 ; Test 1: 2086h + 1204h = 00328Ah
 ; Test 2: 2536h + 29D3h = 004F09h
