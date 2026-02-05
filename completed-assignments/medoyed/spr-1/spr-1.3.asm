@@ -1,0 +1,104 @@
+LICZNIK_ENTER   EQU 30H     
+FLAGA_STANU     EQU 31H     
+
+ORG 0000H
+    LJMP START_PROGRAMU
+
+ORG 0100H
+START_PROGRAMU:
+    LCALL LCD_INIT
+    LCALL LCD_CLR
+
+    
+    MOV R3, #1              
+    
+    
+    MOV LICZNIK_ENTER, #0
+    MOV FLAGA_STANU, #0     
+    
+    
+    SETB P1.5
+    SETB P1.7
+
+GLOWNA_PETLA:
+    ACALL AKTUALIZUJ_WYJSCIA
+    LCALL OPOZNIENIE_SEKWENCYJNE
+    
+    
+    MOV A, FLAGA_STANU
+    CPL A                   
+    ANL A, #01H             
+    MOV FLAGA_STANU, A
+    
+    SJMP GLOWNA_PETLA
+
+
+
+AKTUALIZUJ_WYJSCIA:
+    MOV A, FLAGA_STANU
+    JB ACC.0, WYLACZ_URZADZENIA 
+
+WLACZ_URZADZENIA:
+    CLR P1.5                
+    CLR P1.7                
+    RET
+
+WYLACZ_URZADZENIA:
+    SETB P1.5               
+    SETB P1.7               
+    RET
+
+OPOZNIENIE_SEKWENCYJNE:
+    
+    MOV A, R3               
+    ADD A, #2               
+    MOV R2, A               
+
+PETLA_BLOKOW:
+    LCALL BLOK_256MS
+    DJNZ R2, PETLA_BLOKOW   
+    RET
+
+BLOK_256MS:
+    MOV R7, #0              
+
+CYKL_1MS:
+    MOV A, #1
+    LCALL DELAY_MS          
+
+    
+    LCALL TEST_ENTER
+    JC BRAK_KLAWISZA        
+
+    
+    MOV A, LICZNIK_ENTER
+    JNZ ZMNIEJSZ_LICZNIK
+    MOV LICZNIK_ENTER, #20  
+
+ZMNIEJSZ_LICZNIK:
+    DJNZ LICZNIK_ENTER, KONTYNUUJ_CYKL
+    SJMP STOP_PROGRAMU      
+
+BRAK_KLAWISZA:
+    MOV LICZNIK_ENTER, #0   
+
+KONTYNUUJ_CYKL:
+    DJNZ R7, CYKL_1MS
+    RET
+
+STOP_PROGRAMU:
+    
+    SETB P1.5
+    SETB P1.7
+
+    LCALL LCD_CLR
+    MOV DPTR, #KOMUNIKAT_KONCOWY
+    LCALL WRITE_TEXT
+
+KONIEC_PETLA:
+    SJMP KONIEC_PETLA       
+
+KOMUNIKAT_KONCOWY:
+    DB 'TO KONIEC.', 0
+
+END

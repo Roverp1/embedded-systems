@@ -1,0 +1,88 @@
+LICZNIK_STOP    EQU 20H     
+STAN_WYJSC      EQU 21H     
+
+ORG 0000H
+    LJMP START_121546
+
+ORG 0100H
+START_121546:
+    LCALL LCD_INIT
+    LCALL LCD_CLR
+
+    
+    CLR P1.7
+    SETB P1.5
+    
+    MOV LICZNIK_STOP, #0
+    MOV STAN_WYJSC, #0
+
+PETLA_GLOWNA:
+    LCALL CZEKAJ_256
+    
+    
+    MOV A, STAN_WYJSC
+    CPL A               
+    ANL A, #01H         
+    MOV STAN_WYJSC, A
+    
+    ACALL USTAW_PORTY
+    SJMP PETLA_GLOWNA
+
+
+
+USTAW_PORTY:
+    MOV A, STAN_WYJSC
+    JZ WLACZ_LED        
+
+WLACZ_BUZZER:
+    SETB P1.7           
+    CLR P1.5            
+    RET
+
+WLACZ_LED:
+    CLR P1.7            
+    SETB P1.5           
+    RET
+
+CZEKAJ_256:
+    MOV R7, #0          
+
+PETLA_1MS:
+    MOV A, #1
+    LCALL DELAY_MS      
+
+    LCALL TEST_ENTER
+    JC BRAK_ENTER       
+
+    
+    MOV A, LICZNIK_STOP
+    JNZ ODLICZANIE
+    MOV LICZNIK_STOP, #20
+
+ODLICZANIE:
+    DJNZ LICZNIK_STOP, DALEJ
+    SJMP KONIEC_PRACY
+
+BRAK_ENTER:
+    MOV LICZNIK_STOP, #0
+
+DALEJ:
+    DJNZ R7, PETLA_1MS
+    RET
+
+KONIEC_PRACY:
+    
+    SETB P1.7
+    SETB P1.5
+    
+    LCALL LCD_CLR
+    MOV DPTR, #TXT_KONIEC
+    LCALL WRITE_TEXT
+
+STOP_CPU:
+    SJMP STOP_CPU
+
+TXT_KONIEC:
+    DB 'TO KONIEC.', 0
+
+END

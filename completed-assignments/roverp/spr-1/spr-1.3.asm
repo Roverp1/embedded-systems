@@ -1,0 +1,108 @@
+; Zadanie 1.3 - Sygnalizacja swietlna i dzwiekowa
+; Indeks: 121546 (Y=6)
+; Dioda i brzeczyk dzialaja jednoczesnie przez (Y+2)*256ms
+
+
+LICZNIK_STOP  EQU 20H   
+STAN_UKLADU   EQU 21H   
+
+ORG 0000H
+    LJMP START
+
+ORG 0100H
+START:
+    LCALL LCD_INIT
+    LCALL LCD_CLR
+
+    
+    MOV R3, #6          
+    MOV LICZNIK_STOP, #0
+    MOV STAN_UKLADU, #0
+
+    
+    SETB P1.5           
+    SETB P1.7           
+
+PETLA_GLOWNA:           
+    ACALL STERUJ_WYJSCIAMI
+    LCALL CZEKAJ_CYKL
+    
+  
+    MOV A, STAN_UKLADU
+    CPL A               
+    ANL A, #01H         
+    MOV STAN_UKLADU, A
+    
+    SJMP PETLA_GLOWNA
+
+
+
+STERUJ_WYJSCIAMI:
+    MOV A, STAN_UKLADU
+    JNZ WYLACZ_WSZYSTKO 
+
+WLACZ_WSZYSTKO:
+    CLR P1.5
+    CLR P1.7
+    RET
+
+WYLACZ_WSZYSTKO:
+    SETB P1.5
+    SETB P1.7
+    RET
+
+CZEKAJ_CYKL:
+    
+    MOV A, R3           
+    ADD A, #2           
+    MOV R2, A           
+
+PETLA_CZASU:
+    LCALL OPOZNIENIE_256
+    DJNZ R2, PETLA_CZASU
+    RET
+
+OPOZNIENIE_256:         
+    MOV R7, #0          
+
+SPRAWDZ_KLAWISZ:
+    MOV A, #1
+    LCALL DELAY_MS      
+
+    LCALL TEST_ENTER    
+    JNC PRZYCISK_WCISNIETY
+
+    
+    MOV LICZNIK_STOP, #0
+    SJMP DALEJ_CZAS
+
+PRZYCISK_WCISNIETY:
+    
+    MOV A, LICZNIK_STOP
+    JNZ ODEJMUJ_CZAS
+    MOV LICZNIK_STOP, #20 
+
+ODEJMUJ_CZAS:
+    DJNZ LICZNIK_STOP, DALEJ_CZAS
+    SJMP KONIEC_PROGRAMU 
+
+DALEJ_CZAS:
+    DJNZ R7, SPRAWDZ_KLAWISZ
+    RET
+
+KONIEC_PROGRAMU:
+    
+    SETB P1.5
+    SETB P1.7
+    
+    LCALL LCD_CLR
+    MOV DPTR, #TEKST_KONCOWY
+    LCALL WRITE_TEXT
+
+STOP_CPU:
+    SJMP STOP_CPU       
+
+TEKST_KONCOWY:
+    DB 'KONIEC PROGRAMU', 0 
+
+END
