@@ -1,6 +1,3 @@
-
-
-
 VAL     EQU 30h     
 BCD_BUF EQU 32h     
 
